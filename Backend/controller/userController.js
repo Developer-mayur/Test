@@ -97,17 +97,25 @@ let user =  ( await User.findOne({ email }) ) ;
    console.log("user not    found ");
    return res.status(400).json("invalid   email ");
  }
+  
+ const resetToken =Math.random()
+    .toString(36).slice(2) + Date.now()
+    .toString(36) + Math.random()
+    .toString(36).
+    toString(36);
 
- const resetToken =generatetoken();
-//  console.log(resetToken);
+ console.log(resetToken);
 
  const  resetTokenexpire =Date.now()+300000;
 //  console.log(resetTokenexpire);
 user.resetToken=resetToken;
 user.resetTokenexpire=resetTokenexpire;
+console.log(resetToken)
 await user.save()
 let base =process.env.BASE_URL;
 const resetlink =`${base}/reset-passward?token=${resetToken}`;
+console.log(resetlink);
+console.log(resetToken)
 
 await  transporter.sendMail({
     to:email,
@@ -128,6 +136,77 @@ return res.json({massage:"reset link send"})
 
 
   export let Resetpass = async (req, res) => {
-    res.send("hello")
+    let {token}=req.query;
+    console.log(token)
 
-  }
+    try {
+    
+      res.send(`
+        <form onsubmit="handleSubmit(event)">
+          <input type="hidden" id="token" value="${token}">
+          <input type="password" id="newPassword" placeholder="New Password" required>
+          <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+          <button type="submit">Reset Password</button>
+        </form>
+        <script>
+          async function handleSubmit(e) {
+            e.preventDefault();
+            const res = await fetch('/reset-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                token: document.getElementById('token').value,
+                newPassword: document.getElementById('newPassword').value,
+                confirmPassword: document.getElementById('confirmPassword').value
+              })
+            });
+            
+            if (res.ok) {
+              document.body.innerHTML = '<h3>Password updated successfully!</h3>';
+              
+            }
+             
+            
+          }
+        </script>
+      `);
+        
+}
+catch (error) {
+   console.log(error) 
+} }
+
+
+export let updatepass = async (req, res) => {
+try {
+    const{token,newPassword,confirmPassword} =req.body;
+    console.log(token)
+    console.log(newPassword)
+    console.log(confirmPassword)
+ if(newPassword!=confirmPassword){
+    res.json({massage:"password  do mot match"});
+ }
+
+ const user = await User.findOne({resetToken:token,
+    resetTokenexpire:{$gt: Date.now()}
+ });
+
+if(!user){
+    return res.json({
+        massage:"invalid token"
+    })
+}
+user.passward = await bcrypt.hash(newPassword,10);
+user.resetToken=undefined;
+user.resetTokenexpire=undefined;
+await user.save();
+res.json({massage:"password updated successfully"})
+
+
+} catch (error) {
+    return res.json({
+        massage:error.massage })
+}
+
+
+}
