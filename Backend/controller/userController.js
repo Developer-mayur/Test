@@ -151,7 +151,7 @@ return res.json({massage:"reset link send"})
         <script>
           async function handleSubmit(e) {
             e.preventDefault();
-            const res = await fetch('/reset-password', {
+            const res = await fetch('reset-passward', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
